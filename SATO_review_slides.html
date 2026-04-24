@@ -937,9 +937,42 @@
         <img src="raw/sato/figures/10_7ed8e4ba_img_in_image_box_106_533_589_782.jpg" alt="Artist meshes with UV chart partitions" />
         <div class="figure-caption">Fig. 5 · UV part 단위 traversal — SATO가 학습하는 partition 구조</div>
       </div>
-      <div>
-        <div class="aside-note warn">
-          <strong>주의</strong> &nbsp;SATO가 내는 UV 정보는 <strong>face → island ID partition</strong>뿐. <strong>per-vertex (u, v) 좌표는 출력하지 않습니다.</strong> 평면화는 Blender angle-based unwrap 등 표준 parameterizer를 별도로 실행해야 하고, 논문의 distortion 수치는 "같은 parameterizer 기준 SATO chart가 더 나은 unwrap을 낸다"는 의미.
+      <div style="display:flex;flex-direction:column;gap:12px;justify-content:center;">
+        <!-- Island tokenization flow -->
+        <div style="font-family:'JetBrains Mono','SF Mono',Consolas,monospace;font-size:13px;line-height:1.9;">
+          <!-- Island 1 (red) -->
+          <div style="color:#c2410c;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">① Island 1 faces</div>
+          <div style="padding-left:12px;border-left:3px solid #fb923c;">
+            <span style="color:#9ca3af;font-size:11px;">strip → </span><span class="te-group">c₁c₂c₃</span> <span class="te-group">c₃</span> <span class="te-group">c₃</span>
+            <span class="te-group" style="border-color:#D97706;color:#D97706;margin-left:4px;">a*</span>
+            <span class="te-group">c₁c₂c₃</span> <span class="te-group">c₃</span>
+          </div>
+          <!-- C1'' -->
+          <div style="margin:5px 0 5px 4px;display:flex;align-items:center;gap:8px;">
+            <span style="color:#138a72;font-weight:700;font-size:15px;">↓</span>
+            <span style="background:#f0fdf4;border:2px solid #138a72;color:#138a72;padding:2px 10px;border-radius:6px;font-weight:700;font-size:13px;">C₁ʺ</span>
+            <span style="color:#9ca3af;font-size:11px;">island 경계 (GT에서 미리 정의)</span>
+          </div>
+          <!-- Island 2 (blue) -->
+          <div style="color:#1d4ed8;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">② Island 2 faces</div>
+          <div style="padding-left:12px;border-left:3px solid #60a5fa;">
+            <span style="color:#9ca3af;font-size:11px;">strip → </span><span class="te-group" style="border-color:#2f6fed;color:#2f6fed;">c₁c₂c₃</span> <span class="te-group" style="border-color:#2f6fed;color:#2f6fed;">c₃</span> <span class="te-group" style="border-color:#2f6fed;color:#2f6fed;">c₂c₃</span>
+          </div>
+          <!-- C1'' -->
+          <div style="margin:5px 0 5px 4px;display:flex;align-items:center;gap:8px;">
+            <span style="color:#138a72;font-weight:700;font-size:15px;">↓</span>
+            <span style="background:#f0fdf4;border:2px solid #138a72;color:#138a72;padding:2px 10px;border-radius:6px;font-weight:700;font-size:13px;">C₁ʺ</span>
+            <span style="color:#9ca3af;font-size:11px;">island 경계</span>
+          </div>
+          <!-- Island 3 (purple) -->
+          <div style="color:#6d28d9;font-weight:700;font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;">③ Island 3 faces</div>
+          <div style="padding-left:12px;border-left:3px solid #a78bfa;">
+            <span style="color:#9ca3af;font-size:11px;">strip → </span><span class="te-group" style="border-color:#7c3aed;color:#7c3aed;">c₁c₂c₃</span> <span class="te-group" style="border-color:#7c3aed;color:#7c3aed;">c₃</span> <span style="color:#9ca3af;">…</span>
+          </div>
+        </div>
+        <!-- Warning note (compact) -->
+        <div class="aside-note warn" style="font-size:12px;padding:8px 12px;">
+          <strong>주의</strong> &nbsp;(u,v) 좌표 자체는 미생성 — face→island 분할만. 평면화는 별도 parameterizer 필요.
         </div>
       </div>
     </div>
