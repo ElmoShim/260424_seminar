@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SATO — Strips as Tokens · Seminar 2026-04-24</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+<style>
+  :root {
+    --bg: #ffffff;
+    --text: #111827;
+    --muted: #4b5563;
+    --muted-2: #6b7280;
+    --line: #e5e7eb;
+    --accent-blue: #2f6fed;
+    --accent-green: #138a72;
+    --accent-soft-blue: #dceefe;
+    --accent-soft-green: #ddf6f1;
+    --accent-soft-gray: #f3f7fb;
+    --shadow-soft: 0 10px 30px rgba(17, 24, 39, 0.06);
+    --radius-lg: 24px;
+    --radius-md: 16px;
+    --pad-x: 88px;
+    --pad-y: 56px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100vw; height: 100vh; overflow: hidden; }
+  body {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui,
+      'Segoe UI', Roboto, 'Helvetica Neue', 'Apple SD Gothic Neo', 'Noto Sans KR',
+      'Malgun Gothic', sans-serif;
+    background: var(--bg); color: var(--text); font-size: 16px; line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'tnum' 1, 'ss01' 1;
+  }
+
+  .deck { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+  .slide {
+    position: absolute; inset: 0;
+    padding: var(--pad-y) var(--pad-x) calc(var(--pad-y) + 24px);
+    display: flex; flex-direction: column;
+    opacity: 0; visibility: hidden;
+    transition: opacity 0.28s ease;
+    background: var(--bg);
+  }
+  .slide.is-active { opacity: 1; visibility: visible; }
+
+  .slide-header { margin-bottom: 8px; }
+  .kicker {
+    font-size: 12px; color: var(--muted-2); letter-spacing: 0.1em;
+    text-transform: uppercase; font-weight: 600; margin-bottom: 8px;
+  }
+  .slide-title {
+    font-size: 32px; font-weight: 700; letter-spacing: -0.015em;
+    color: var(--text); line-height: 1.2;
+  }
+  .title-accent {
+    display: block; width: 56px; height: 3px; margin-top: 10px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    border-radius: 3px;
+  }
+
+  .slide-body { flex: 1; display: flex; flex-direction: column; min-height: 0; gap: 16px; }
+
+  .narration {
+    font-size: 22px; font-weight: 500; color: var(--text);
+    line-height: 1.5; letter-spacing: -0.005em; max-width: 1100px;
+  }
+  .narration em {
+    font-style: normal;
+    background: linear-gradient(180deg, transparent 65%, rgba(47,111,237,0.22) 65%);
+    padding: 0 3px;
+  }
+  .narration strong { font-weight: 700; color: var(--text); }
+  .narration .colon { color: var(--accent-blue); margin: 0 6px; font-weight: 700; }
+  .narration-sub {
+    list-style: none; padding: 0; margin: 6px 0 0 0;
+    display: flex; flex-direction: column; gap: 4px; max-width: 1100px;
+  }
+  .narration-sub li {
+    font-size: 18px; color: var(--muted); line-height: 1.5;
+    position: relative; padding-left: 16px;
+  }
+  .narration-sub li::before {
+    content: '–'; position: absolute; left: 0; color: var(--accent-blue); font-weight: 700;
+  }
+  .narration-sub li em {
+    font-style: normal;
+    background: linear-gradient(180deg, transparent 65%, rgba(47,111,237,0.18) 65%);
+    padding: 0 2px;
+  }
+  .narration-sub li strong { color: var(--text); font-weight: 700; }
+
+  .ref-note {
+    font-size: 12px; color: var(--muted-2); margin-top: auto;
+    padding-top: 10px; border-top: 1px solid var(--line); line-height: 1.5;
+    letter-spacing: 0.02em;
+  }
+  .ref-note strong { color: var(--muted); font-weight: 600; }
+
+  .figure-panel {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px; flex: 1; min-height: 0;
+  }
+  .figure-panel img {
+    max-width: 100%; max-height: 72vh; object-fit: contain;
+    border-radius: 6px; cursor: zoom-in;
+    transition: transform 0.2s ease;
+  }
+  .figure-panel img:hover { transform: scale(1.01); }
+  .figure-caption { font-size: 12px; color: var(--muted-2); text-align: center; max-width: 85%; line-height: 1.45; }
+
+  .fig-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; flex: 1; min-height: 0; }
+  .fig-duo .figure-panel img { max-height: 58vh; }
+
+  .placeholder {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 36px 32px;
+    border: 2px dashed var(--accent-blue);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(47,111,237,0.04), rgba(19,138,114,0.03));
+    text-align: center; flex: 1; min-height: 200px; gap: 10px;
+  }
+  .placeholder .ph-tag {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--accent-blue); text-transform: uppercase;
+    padding: 4px 10px; background: var(--accent-soft-blue);
+    border-radius: 999px;
+  }
+  .placeholder .ph-title { font-size: 18px; font-weight: 600; color: var(--text); line-height: 1.4; max-width: 760px; }
+  .placeholder .ph-desc { font-size: 14px; color: var(--muted); line-height: 1.55; max-width: 720px; font-style: italic; }
+  .placeholder .ph-why { font-size: 13px; color: var(--muted-2); max-width: 720px; }
+
+  /* Title slide */
+  .slide--title { justify-content: center; padding: var(--pad-y) 96px; position: relative; }
+  .slide--title .glow-tr {
+    position: absolute; top: -260px; right: -260px; width: 720px; height: 720px;
+    background: radial-gradient(circle, rgba(47,111,237,0.12), transparent 55%);
+    pointer-events: none;
+  }
+  .slide--title .glow-bl {
+    position: absolute; bottom: -200px; left: -200px; width: 520px; height: 520px;
+    background: radial-gradient(circle, rgba(19,138,114,0.10), transparent 60%);
+    pointer-events: none;
+  }
+  .slide--title .content-wrap { position: relative; z-index: 1; display: grid; grid-template-columns: 55fr 45fr; gap: 48px; align-items: center; width: 100%; }
+  .slide--title .pill {
+    display: inline-block; padding: 5px 14px; border-radius: 999px;
+    background: var(--accent-soft-blue); color: var(--accent-blue);
+    font-size: 13px; font-weight: 600; letter-spacing: 0.06em; margin-bottom: 20px;
+  }
+  .slide--title .paper-title {
+    font-size: 46px; font-weight: 700; letter-spacing: -0.022em;
+    line-height: 1.12; margin-bottom: 16px;
+  }
+  .slide--title .paper-subtitle {
+    font-size: 19px; color: var(--muted); margin-bottom: 34px;
+    line-height: 1.55; max-width: 700px;
+  }
+  .slide--title .meta {
+    display: grid; grid-template-columns: auto 1fr; gap: 8px 20px;
+    font-size: 16px; color: var(--muted);
+  }
+  .slide--title .meta dt { font-weight: 600; color: var(--muted-2); letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; align-self: center; }
+  .slide--title .meta dd { color: var(--text); font-size: 16px; }
+  .slide--title .hero-wrap { display: flex; justify-content: center; align-items: center; }
+  .slide--title .hero-wrap img { max-width: 100%; max-height: 62vh; object-fit: contain; border-radius: 8px; }
+
+  /* Agenda — question-based */
+  .q-agenda {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
+    flex: 1; align-items: stretch;
+  }
+  .q-card {
+    padding: 26px 26px; border-radius: var(--radius-md);
+    background: var(--accent-soft-gray);
+    display: flex; flex-direction: column; gap: 10px;
+    border-left: 4px solid var(--accent-blue);
+  }
+  .q-card:nth-child(2) { border-left-color: var(--accent-green); }
+  .q-card:nth-child(3) { border-left-color: #9333ea; }
+  .q-card:nth-child(4) { border-left-color: #D97706; }
+  .q-card .step { font-size: 12px; font-weight: 700; color: var(--muted-2); letter-spacing: 0.12em; }
+  .q-card h3 { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .q-card p { font-size: 14px; color: var(--muted); line-height: 1.5; }
+
+  /* Training timeline */
+  .train-timeline {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    flex: 1; align-items: stretch; position: relative;
+  }
+  .train-timeline::before {
+    content: ''; position: absolute;
+    top: 38px; left: 8%; right: 8%; height: 2px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green) 50%, #9333ea);
+    opacity: 0.25; z-index: 0;
+  }
+  .stage {
+    position: relative; z-index: 1;
+    padding: 22px 20px; border-radius: var(--radius-md);
+    background: white; border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 10px;
+    box-shadow: var(--shadow-soft);
+  }
+  .stage .dot {
+    width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent-blue); margin-bottom: 4px;
+    box-shadow: 0 0 0 5px rgba(47,111,237,0.12);
+  }
+  .stage:nth-child(2) .dot { background: var(--accent-green); box-shadow: 0 0 0 5px rgba(19,138,114,0.12); }
+  .stage:nth-child(3) .dot { background: #9333ea; box-shadow: 0 0 0 5px rgba(147,51,234,0.12); }
+  .stage .stage-tag { font-size: 11px; font-weight: 700; color: var(--muted-2); letter-spacing: 0.1em; text-transform: uppercase; }
+  .stage h3 { font-size: 19px; font-weight: 700; color: var(--text); }
+  .stage .stage-spec { font-size: 13px; color: var(--muted); font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; line-height: 1.5; }
+
+  /* Stat grid */
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
+  .stat { padding: 18px 20px; border-radius: var(--radius-md); background: var(--accent-soft-gray); }
+  .stat .label { font-size: 12px; color: var(--muted-2); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+  .stat .value { font-size: 28px; font-weight: 700; color: var(--text); margin-top: 6px; line-height: 1.15; }
+  .stat .unit { font-size: 15px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .stat.accent { background: linear-gradient(135deg, rgba(47,111,237,0.09), rgba(19,138,114,0.07)); }
+  .stat.accent .value { color: var(--accent-blue); }
+
+  /* Comparison table */
+  .comp-table-wrap { flex: 1; display: flex; align-items: center; min-height: 0; }
+  .comp-table { width: 100%; border-collapse: collapse; font-size: 17px; }
+  .comp-table th, .comp-table td {
+    padding: 13px 16px; text-align: left;
+    border-bottom: 1px solid var(--line);
+  }
+  .comp-table th {
+    font-weight: 600; color: var(--muted-2); font-size: 13px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    border-bottom: 2px solid var(--line);
+  }
+  .comp-table td.num, .comp-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .comp-table tr.row-ours td {
+    background: linear-gradient(135deg, rgba(47,111,237,0.08), rgba(19,138,114,0.06));
+    font-weight: 600;
+  }
+  .comp-table tr.row-ours td:first-child {
+    border-left: 3px solid var(--accent-blue);
+  }
+  .comp-table .method-name { font-weight: 500; }
+  .comp-table tr.row-ours .method-name { color: var(--accent-blue); font-weight: 700; }
+  .comp-table .mono-num { font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; }
+
+  /* Aside note */
+  .aside-note {
+    font-size: 14px; color: var(--muted);
+    padding: 10px 14px; border-left: 3px solid var(--accent-blue);
+    background: var(--accent-soft-gray); border-radius: 0 8px 8px 0;
+    line-height: 1.55; max-width: 760px;
+  }
+  .aside-note strong { color: var(--text); }
+  .aside-note.warn { border-left-color: #D97706; background: #FFF7ED; color: #78350F; }
+  .aside-note.warn strong { color: #78350F; }
+
+  /* Layout variants */
+  .layout-split { display: grid; grid-template-columns: 58fr 42fr; gap: 32px; flex: 1; min-height: 0; align-items: center; }
+  .layout-split > div { min-width: 0; display: flex; flex-direction: column; justify-content: center; }
+
+  /* Takeaways */
+  .slide--takeaway { justify-content: center; }
+  .slide--takeaway .big-takeaway {
+    font-size: 32px; font-weight: 700; line-height: 1.3;
+    letter-spacing: -0.015em; max-width: 1100px; margin-bottom: 28px;
+  }
+  .slide--takeaway .big-takeaway em {
+    font-style: normal;
+    background: linear-gradient(180deg, transparent 65%, rgba(47,111,237,0.25) 65%);
+    padding: 0 4px;
+  }
+  .slide--takeaway .hero-wrap img { max-width: 100%; max-height: 46vh; border-radius: 6px; }
+  .slide--takeaway .two-col { display: grid; grid-template-columns: 55fr 45fr; gap: 40px; align-items: center; }
+
+  /* Concept map */
+  .concept-map {
+    display: grid; grid-template-columns: 1fr auto 1fr; gap: 28px;
+    flex: 1; align-items: center; padding: 20px 0;
+  }
+  .concept-card {
+    padding: 22px 22px; border-radius: var(--radius-md);
+    background: var(--accent-soft-gray); border: 1px solid var(--line);
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .concept-card .label { font-size: 11px; font-weight: 700; color: var(--muted-2); letter-spacing: 0.12em; text-transform: uppercase; }
+  .concept-card h3 { font-size: 20px; font-weight: 700; color: var(--text); line-height: 1.3; }
+  .concept-card p { font-size: 14px; color: var(--muted); line-height: 1.55; }
+  .concept-arrow { font-size: 32px; color: var(--accent-blue); text-align: center; font-weight: 300; }
+  .concept-arrow .label { display: block; font-size: 11px; color: var(--muted-2); font-weight: 700; letter-spacing: 0.12em; margin-top: 2px; }
+
+  /* Pseudocode */
+  .pseudocode {
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, Monaco, monospace;
+    font-size: 13px; line-height: 1.7;
+    background: var(--accent-soft-gray);
+    padding: 14px 18px; border-radius: var(--radius-md);
+    color: var(--text); white-space: pre; overflow: auto;
+    border-left: 3px solid var(--accent-blue);
+    max-width: 560px;
+  }
+  .pseudocode .kw { color: var(--accent-blue); font-weight: 700; }
+  .pseudocode .com { color: var(--muted-2); font-style: italic; }
+
+  /* Token example — small illustrative block showing how a method tokenizes a mesh */
+  .token-example {
+    margin-top: 12px; padding: 12px 16px;
+    border-radius: var(--radius-md);
+    background: var(--accent-soft-gray);
+    border-left: 3px solid var(--accent-blue);
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, Monaco, monospace;
+    font-size: 13px; line-height: 1.7;
+  }
+  .token-example .te-label {
+    display: inline-block;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+    color: var(--accent-blue); text-transform: uppercase;
+    padding: 3px 10px; background: var(--accent-soft-blue);
+    border-radius: 999px; margin-bottom: 8px;
+    font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+  }
+  .token-example .te-line { color: var(--text); }
+  .token-example .te-group {
+    display: inline-block;
+    padding: 1px 8px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    margin: 2px 2px;
+    color: var(--accent-blue);
+  }
+  .token-example .te-sep { color: var(--muted-2); margin: 0 4px; }
+  .token-example .te-note {
+    color: var(--muted);
+    font-family: 'Pretendard Variable', Pretendard, system-ui, sans-serif;
+    font-size: 12px; margin-top: 6px;
+  }
+  .token-example .te-note strong { color: var(--text); font-weight: 700; }
+
+  /* Navigation */
+  .nav-bar {
+    position: fixed; bottom: 14px; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 28px; pointer-events: none; z-index: 50;
+  }
+  .nav-hint { font-size: 11px; color: var(--muted-2); opacity: 0.75; letter-spacing: 0.04em; pointer-events: auto; }
+  .nav-right { display: flex; gap: 10px; align-items: center; pointer-events: auto; }
+  .counter {
+    font-size: 12px; color: var(--muted-2); font-variant-numeric: tabular-nums;
+    font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace;
+    padding: 5px 10px; background: rgba(255,255,255,0.85); backdrop-filter: blur(6px);
+    border: 1px solid var(--line); border-radius: 12px;
+  }
+  .nav-btn {
+    font: inherit; font-size: 12px; font-weight: 500;
+    color: var(--muted); background: rgba(255,255,255,0.9);
+    backdrop-filter: blur(6px);
+    border: 1px solid var(--line); padding: 6px 12px; border-radius: 14px;
+    cursor: pointer; transition: all 0.15s ease;
+  }
+  .nav-btn:hover { color: var(--text); border-color: var(--muted); background: #fff; }
+  .nav-btn:active { transform: translateY(1px); }
+  .nav-btn.is-on { color: var(--accent-blue); border-color: var(--accent-blue); background: var(--accent-soft-blue); }
+
+  .progress {
+    position: fixed; top: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+    width: 0%; transition: width 0.3s ease; z-index: 100;
+  }
+
+  /* Modal */
+  .modal {
+    position: fixed; inset: 0; background: rgba(17,24,39,0.9);
+    display: none; justify-content: center; align-items: center;
+    z-index: 200; cursor: zoom-out;
+  }
+  .modal.is-open { display: flex; }
+  .modal img { max-width: 94vw; max-height: 92vh; object-fit: contain; border-radius: 4px; }
+  .modal::after {
+    content: 'Esc to close';
+    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+    color: rgba(255,255,255,0.6); font-size: 12px; letter-spacing: 0.05em;
+  }
+
+  /* Speaker notes */
+  .speaker-notes {
+    display: none;
+    position: fixed; bottom: 52px; left: 24px; right: 24px;
+    max-height: 32vh; overflow-y: auto;
+    padding: 16px 22px; z-index: 80;
+    background: rgba(17,24,39,0.96); color: #f3f4f6;
+    border-radius: 14px; font-size: 14px; line-height: 1.6;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+  }
+  .speaker-notes .notes-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+    color: #9ca3af; margin-bottom: 8px;
+  }
+  .speaker-notes ul { list-style: disc; padding-left: 20px; }
+  .speaker-notes li { margin-bottom: 5px; color: #e5e7eb; }
+  .speaker-notes li strong { color: #fff; }
+  body.show-notes .slide.is-active .speaker-notes { display: block; }
+
+  .muted { color: var(--muted); }
+  .accent-blue { color: var(--accent-blue); }
+  .mono-num { font-variant-numeric: tabular-nums; font-family: 'JetBrains Mono', 'SF Mono', Consolas, monospace; }
+</style>
+</head>
+<body>
+
+<div class="progress" id="progress"></div>
+
+<div class="deck" id="deck">
+
+<!-- Slide 1 — Title -->
+<section class="slide slide--title">
+  <div class="glow-tr"></div>
+  <div class="glow-bl"></div>
+  <div class="content-wrap">
+    <div>
+      <span class="pill">Paper Review · Seminar 2026-04-24</span>
+      <h1 class="paper-title">Strips as Tokens:<br/>Artist Mesh Generation with Native UV Segmentation</h1>
+      <p class="paper-subtitle">Triangle strips을 AR 토큰 단위로 승격하고, 동일 시퀀스로 tri/quad mesh와 UV chart partition을 동시에 생성하는 첫 프레임워크.</p>
+      <dl class="meta">
+        <dt>arXiv</dt><dd>2604.09132v1 · 2026-04-10</dd>
+        <dt>Authors</dt><dd>Rui Xu, Dafei Qin et al. (HKU · ShanghaiTech · Deemos · TAMU)</dd>
+        <dt>Presenter</dt><dd>Elmo Shim <span class="muted">· ML Engineer @ CLO</span></dd>
+      </dl>
+    </div>
+    <div class="hero-wrap">
+      <img src="raw/sato/figures/01_ed3e4ace_img_in_image_box_102_534_1120_1037.jpg" alt="SATO teaser" />
+    </div>
+  </div>
+</section>
+
+<!-- Slide 2 — What is artist mesh? -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 2 / 24</div>
+    <h2 class="slide-title">What is an "artist mesh"?</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Artist mesh</strong> <span class="colon">:</span> 3D 작업자가 손으로 만든 mesh, <em>edge flow가 깨끗한 quad 구조</em></p>
+    <ul class="narration-sub">
+      <li>머리카락 결 · 옷 솔기처럼 표면에 자연스러운 "결"</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/03_907aa446_img_in_image_box_637_150_1116_442.jpg" alt="Artist Quad / Artist Tri / Delaunay / Marching Cubes" />
+      <div class="figure-caption">Fig. 2 · 왼쪽 두 패널이 artist-made, 오른쪽 두 패널이 기계가 만든 mesh. 눈으로도 차이가 보인다.</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §1 · Fig. 2</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>"Mesh"는 3D 모델을 이루는 삼각형(또는 사각형) 덩어리 — 표면을 조각난 패널로 덮은 것</li>
+      <li>Artist mesh 특징: <strong>사각형(quad) 위주 + edge가 표면 곡률 방향을 따라 흐름</strong></li>
+      <li>비유: 옷의 솔기가 어깨·허리 같은 자연스러운 선을 따라 배치되는 것과 같음</li>
+      <li>왜 중요? 리깅/애니메이션, 텍스처링, 시뮬레이션이 모두 <strong>edge flow 위에서 돌아감</strong></li>
+      <li>CLO 맥락: 가먼트 mesh도 결국 이 "결"이 있어야 시뮬레이션이 안정적 — 다음 슬라이드에서 "왜 AI가 이걸 못 만드는지"</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 4 — Why can't generative AI make this? -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 3 / 24</div>
+    <h2 class="slide-title">Why can't generative AI make this?</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>요즘 3D 생성 AI</strong> (TRELLIS · Hunyuan3D · CLAY · Wonder3D) <span class="colon">:</span> Marching Cubes 같은 알고리즘으로 <em>reconstruction</em></p>
+    <ul class="narration-sub">
+      <li>dense triangle 덩어리</li>
+      <li>그래서 <strong>AR transformer로 mesh 직접 생성</strong>하는 새 흐름 — 다음 세 논문이 대표</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="figures/misc/marching_cubes_example.jpg" alt="Marching Cubes output example" />
+      <div class="figure-caption">Marching Cubes 출력 예시 (AI 아닌 단순 알고리즘 결과) — 표면은 복원되지만 triangle이 uniform · dense</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §1 "[Wonder3D · TRELLIS · CLAY · Hunyuan3D-2.5 ...] typically results in dense triangle meshes..."</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>대부분의 3D 생성 AI는 <strong>implicit representation</strong> (SDF, occupancy field) → 표면 추출 단계에서 <strong>Marching Cubes</strong></li>
+      <li>MC는 voxel grid를 삼각형으로 균등하게 쪼갬 — 표면 방향·curvature 무시</li>
+      <li>결과: 10–100만 face 짜리 "삼각형 수프" (triangle soup)</li>
+      <li>외형(렌더 이미지)은 OK지만 <strong>실제 production 파이프라인엔 못 씀</strong> — 리깅/애니메이션/시뮬레이션 불가능</li>
+      <li>이게 3D 생성 AI의 숨겨진 한계 — 관객이 평소 보는 데모는 "뽀샵된 썸네일"</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 4 — MeshGPT (2024) -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 4 / 24</div>
+    <h2 class="slide-title">MeshGPT (2024) — the origin</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>MeshGPT</strong> <span class="colon">:</span> triangle마다 <em>VQ-VAE discrete token</em> → GPT 시퀀스 예측</p>
+    <ul class="narration-sub">
+      <li>AR mesh 생성 계보의 <strong>원조</strong></li>
+    </ul>
+    <div class="layout-split">
+      <div class="figure-panel">
+        <img src="figures/meshgpt/figure_01_p1.png" alt="MeshGPT teaser" />
+        <div class="figure-caption">MeshGPT Fig. 1 (Siddiqui et al. CVPR 2024)</div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 14px;">
+        <div class="concept-card">
+          <span class="label">방식</span>
+          <p>각 triangle을 VQ-VAE codebook embedding에 매핑, causal transformer가 다음 triangle 토큰을 예측. Mesh 생성을 sequence modeling으로 푼 최초 framework.</p>
+        </div>
+        <div class="concept-card" style="border-left: 3px solid #D97706; background: #FFF7ED;">
+          <span class="label" style="color: #D97706;">한계</span>
+          <p>Face 수 상한이 <strong>약 800</strong>으로 복잡한 production asset은 불가. Codebook이 triangle 형태 variation을 모두 담아야 해서 scale이 어려움.</p>
+        </div>
+      </div>
+    </div>
+    <div class="token-example">
+      <span class="te-label">Token example · MeshGPT (RVQ, 6 codes / face)</span>
+      <div class="te-line">face₁ &nbsp;<span class="te-group">v₁ → c₃₂ c₁₈</span> <span class="te-group">v₂ → c₄₇ c₆</span> <span class="te-group">v₃ → c₂₅ c₃₉</span></div>
+      <div class="te-line">face₂ &nbsp;<span class="te-group">v₁ → c₈ c₄₁</span> <span class="te-group">v₂ → c₃₂ c₁₉</span> <span class="te-group">v₃ → c₁₃ c₅₅</span></div>
+      <div class="te-note">AR sequence → c₃₂ c₁₈ c₄₇ c₆ c₂₅ c₃₉ <span class="te-sep">│</span> c₈ c₄₁ c₃₂ c₁₉ c₁₃ c₅₅ <span class="te-sep">│</span> … &nbsp;(<strong>face당 6 토큰, 총 6N</strong>)</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Siddiqui et al. CVPR 2024 · SATO §2.2.1</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>2024 CVPR — mesh를 sequence로 보는 발상의 <strong>시작</strong></li>
+      <li>Triangle마다 512-dim embedding을 9개 codebook token으로 분해 후 causal transformer 예측</li>
+      <li>SATO도 "early representative"로 본문에 명시</li>
+      <li>핵심 한계: <strong>face 수 ~800 상한</strong> — 복잡한 production asset은 불가</li>
+      <li>VQ-VAE가 "모든 triangle 모양"을 학습해야 하는 부담 — scale이 본질적으로 어려움</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 5 — BPT (2025) -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 5 / 24</div>
+    <h2 class="slide-title">BPT (2025) — push the scale</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>BPT</strong> <span class="colon">:</span> <em>block</em> (좌표 압축) + <em>patchified</em> (hub vertex fan으로 face 묶기) → 시퀀스 ~75% 단축</p>
+    <ul class="narration-sub">
+      <li>더 큰 asset까지 AR 생성 확장</li>
+      <li>단, patch 경계마다 edge flow 리셋</li>
+    </ul>
+    <div class="fig-duo">
+      <div class="figure-panel">
+        <img src="figures/bpt/figure_01_p1.png" alt="BPT teaser" style="max-height: 34vh;" />
+        <div class="figure-caption">Fig. 1 · BPT로 생성한 mesh (최대 8k faces)</div>
+      </div>
+      <div class="figure-panel">
+        <img src="figures/bpt/figure_03_p3.png" alt="BPT block + patchified tokenization diagram" style="max-height: 34vh;" />
+        <div class="figure-caption">Fig. 3 · (a) Cartesian → block-wise 인덱스 &nbsp;·&nbsp; (b) hub vertex 주변 face → patch</div>
+      </div>
+    </div>
+    <div class="concept-card" style="border-left: 3px solid #D97706; background: #FFF7ED; max-width: 1000px; margin: 0 auto;">
+      <span class="label" style="color: #D97706;">한계</span>
+      <p>Patch 경계마다 edge flow가 끊김 — artist의 긴 결이 복원 안 됨. Vocabulary가 <strong>40,960</strong>으로 폭증.</p>
+    </div>
+    <div class="token-example">
+      <span class="te-label">Token example · BPT (block + patchified)</span>
+      <div class="te-line">patch₁ &nbsp;<span class="te-group">hub: b′₁₁ o₂₃</span> <span class="te-group">v₁: b₃ o₄₂</span> <span class="te-group">v₂: o₁₇</span> <span class="te-group">v₃: b₅ o₈</span></div>
+      <div class="te-line">patch₂ &nbsp;<span class="te-group">hub: b′₂ o₅₁</span> <span class="te-group">v₄: b₇ o₃₉</span> <span class="te-group">v₅: o₅</span> …</div>
+      <div class="te-note"><strong>b′</strong> (dual-block) = 새 patch 시작 마커 <span class="te-sep">·</span> <strong>b/o</strong> = block index · offset <span class="te-sep">·</span> v₂는 v₁과 같은 block이라 <strong>b 생략</strong> → vertex당 1~2 tokens</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Weng et al. 2025 · SATO §2.2.1 · Table 1</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>2025 — "Blocked and Patchified Tokenization"</li>
+      <li>MeshGPT 대비 시퀀스 크게 짧아져 <strong>더 큰 mesh</strong> 가능</li>
+      <li>하지만 block/patch 경계마다 <strong>strip-like continuity 파괴</strong></li>
+      <li>SATO가 "patch-based ordering의 대표 문제 사례"로 직접 비판</li>
+      <li>Vocabulary 40,960 — combinatorial patch variation 때문에 폭증</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 6 — DeepMesh (2025) -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 6 / 24</div>
+    <h2 class="slide-title">DeepMesh (2025) — tighten the prior</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>DeepMesh</strong> <span class="colon">:</span> <em>hierarchical coord</em> + <em>DPO</em>로 품질 향상</p>
+    <ul class="narration-sub">
+      <li>SATO가 prefix sharing 그대로 계승한 <strong>직계 전작</strong></li>
+    </ul>
+    <div class="fig-duo">
+      <div class="figure-panel">
+        <img src="figures/deepmesh/figure_01_p1.png" alt="DeepMesh teaser" style="max-height: 34vh;" />
+        <div class="figure-caption">Fig. 1 · DeepMesh 생성 결과 (Zhao et al. 2025)</div>
+      </div>
+      <div class="figure-panel">
+        <img src="figures/deepmesh/figure_09_p13.png" alt="DeepMesh tokenization algorithm diagram" style="max-height: 34vh;" />
+        <div class="figure-caption">Fig. 9 · (a) patch traversal · (b) 좌표를 3-level 계층 block으로 분할 · prefix sharing</div>
+      </div>
+    </div>
+    <div class="concept-card" style="border-left: 3px solid #D97706; background: #FFF7ED; max-width: 1000px; margin: 0 auto;">
+      <span class="label" style="color: #D97706;">한계</span>
+      <p>여전히 <strong>patch-based local traversal</strong>. 긴 edge flow를 하나의 chain으로 담아내지 못해 artist topology 보존에 실패.</p>
+    </div>
+    <div class="token-example">
+      <span class="te-label">Token example · DeepMesh (hierarchical coord + prefix sharing)</span>
+      <div class="te-line">v₁ <span class="te-group">5 · 12 · 101</span> <span class="te-sep">│</span> v₂ <span class="te-group">88</span> <span class="te-sep">│</span> v₃ <span class="te-group">7 · 54</span> <span class="te-sep">│</span> v₄ <span class="te-group">9 · 3 · 22</span></div>
+      <div class="te-note"><strong>(c₁, c₂, c₃)</strong> = 4³/8³/16³ 계층 셀 인덱스 <span class="te-sep">·</span> v₂는 <strong>c₁·c₂ 공유</strong>로 c₃만 (1 token) <span class="te-sep">·</span> v₃는 <strong>c₁ 공유</strong>로 c₂·c₃ (2 tokens) <span class="te-sep">·</span> v₄는 c₁ 달라져 full (3 tokens) → vertex당 <strong>1~3 tokens</strong></div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Zhao et al. 2025 · SATO §2.2.1 · §4.1</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>2025 — hierarchical coord tokenization 도입</li>
+      <li>(c₁, c₂, c₃) coarse-to-fine + prefix sharing으로 시퀀스 길이 대폭 축소</li>
+      <li>DPO로 human preference까지 반영 — "artist가 선호하는 mesh"에 근접</li>
+      <li>SATO는 이 tokenization 철학을 <strong>그대로 계승</strong>하고 ordering만 strip으로 교체</li>
+      <li>한계: 여전히 patch 단위 traversal이라 prefix sharing이 자주 리셋됨</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 6 — Hook: SATO results preview -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Setup · Slide 7 / 24</div>
+    <h2 class="slide-title">Here's what SATO actually produces</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>SATO</strong> <span class="colon">:</span> <em>한 모델로 tri · quad · UV segmentation</em> 전부 생성</p>
+    <ul class="narration-sub">
+      <li>결과 먼저 보고 "어떻게?"로</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/14_b656f0ff_img_in_image_box_102_158_1119_820.jpg" alt="SATO gallery — tri, quad, UV segmentation" style="max-height: 56vh;" />
+      <div class="figure-caption">Fig. 8 · 하단 → 상단: tri mesh · UV segmentation (색별 chart 구분) · quad mesh. 같은 backbone, inference-time stride 전환만.</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper Fig. 8</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>이 슬라이드는 <strong>hook</strong> — 기술 설명 들어가기 전에 관객의 흥미 확보</li>
+      <li>핵심 메시지 세 가지:
+        <ul>
+          <li>① 기존 AI는 triangle dense mesh만, SATO는 <strong>quad</strong>도 만든다</li>
+          <li>② UV segmentation이 <strong>함께</strong> 나온다 (색별로 구분된 chart)</li>
+          <li>③ <strong>같은 모델</strong>이 이 셋을 다 함 — 모델 하나로 세 출력</li>
+        </ul>
+      </li>
+      <li>"어떻게 이게 가능한가?" → 다음 섹션 (Q2 Method)로 자연스럽게 넘어가기</li>
+      <li>클릭하면 확대됨 — 비전문가가 wireframe을 자세히 보고 싶을 수 있으니 유도</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 7 — Key insight: triangle strips -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 8 / 24</div>
+    <h2 class="slide-title">Key insight — Triangle strips</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Strip</strong> <span class="colon">:</span> 새 face가 이전 face와 <em>edge 공유</em>하며 자라는 구조</p>
+    <ul class="narration-sub">
+      <li>artist가 mesh를 incremental하게 grow하는 방식과 정렬</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/04_284109c2_img_in_image_box_871_593_1118_697.jpg" alt="Triangle strip schematic" />
+      <div class="figure-caption">Triangle strip — 인접 face가 edge를 공유하는 ordered chain</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §3.1 Triangle Strips</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>고전 CG (1990년대~)에서 rendering 최적화 위해 쓰던 개념 — GPU primitive</li>
+      <li>각 새 face가 <strong>단 하나의 new vertex</strong>만 추가 → memory-efficient</li>
+      <li>중요한 건: connectivity + local continuity를 <strong>시퀀스 순서 자체에 인코딩</strong>한다는 점</li>
+      <li>Artist가 boundary에서 면을 incremental하게 확장하는 방식 = strip-like</li>
+      <li>SATO의 기여: 이 classic idea를 <strong>AR token의 단위</strong>로 승격 — tokenization의 mid-level language</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 8 — Pipeline overview -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 9 / 24</div>
+    <h2 class="slide-title">Pipeline overview</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Pipeline</strong> <span class="colon">:</span> point cloud → encoder → hourglass transformer → stride σ</p>
+    <ul class="narration-sub">
+      <li>σ=1 → tri · σ=2 → quad · C₁ʺ → UV segmentation</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/05_6fd33689_img_in_image_box_104_167_1119_641.jpg" alt="SATO pipeline diagram" />
+      <div class="figure-caption">Fig. 3 · SATO 파이프라인 전체</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper Fig. 3</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Input: mesh 표면에서 <strong>81,920 points</strong> 샘플링 (mesh 입력이 아님)</li>
+      <li>PC encoder <strong>0.27B</strong> — Hunyuan3D VAE 구조를 축소해 scratch 학습</li>
+      <li>Condition 토큰 1,024개로 압축 후 cross-attention</li>
+      <li>Core transformer <strong>0.5B</strong>, 21 layers, 8 heads, d=1,024</li>
+      <li>Inference 시 KV cache + temperature 0.5 sampling</li>
+      <li>출력은 <strong>토큰 시퀀스 하나</strong> — 이를 어떻게 해석하느냐가 tri/quad/UV 분기</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 9 — Hierarchical quantization -->
+<section class="slide" style="padding-left: 36px; padding-right: 36px;">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 10 / 24</div>
+    <h2 class="slide-title">Hierarchical geometry quantization</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Quantization</strong> <span class="colon">:</span> 512³ voxel → 4³/8³/16³ 3-level, <em>상위 prefix 공유</em></p>
+    <ul class="narration-sub">
+      <li>대부분 정점이 1–2 토큰</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/08_7ed8e4ba_img_in_image_box_102_160_585_356.jpg" alt="Hierarchical coordinates (c1, c2, c3)" style="width: 100%; max-height: 78vh;" />
+      <div class="figure-caption">Fig. 4 (left) · (c₁, c₂, c₃) 3-level hierarchical coordinates</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.1 · Fig. 4 (left)</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>vertex 좌표를 <strong>512³ voxel grid</strong>에 정렬</li>
+      <li>(c₁, c₂, c₃) = 4³ / 8³ / 16³ — coarse to fine</li>
+      <li>연속 정점이 같은 상위 cell에 속하면 c₁·c₂ 생략, c₃만 기록</li>
+      <li>실제 token 분포: <strong>c₁ 20.7% / c₂ 35.0% / c₃ 44.3%</strong></li>
+      <li>DeepMesh의 prefix sharing을 그대로 계승 — strip의 spatial continuity와 궁합 좋음</li>
+      <li>비전문가용 비유: 주소를 "서울시 강남구 역삼동 123"이라고 매번 쓰지 않고, 구와 동이 같으면 번지만 — 그런 압축</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 10 — Strip extraction -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 11 / 24</div>
+    <h2 class="slide-title">Strip extraction — zipper-like growth</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Strip extraction</strong> <span class="colon">:</span> lowest-coord seed → adjacency 따라 <em>zipper처럼 grow</em> → dead-end에서 끊기</p>
+    <ul class="narration-sub">
+      <li>deterministic해서 모델이 학습하기 쉬움</li>
+    </ul>
+<svg viewBox="0 0 740 290" style="width:100%;max-height:62vh;" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <marker id="sa1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#2f6fed"/></marker>
+    <marker id="sa2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#138a72"/></marker>
+    <marker id="sa3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,1 L9,5 L0,9z" fill="#D97706"/></marker>
+  </defs>
+
+  <!-- ── STRIP 1 (blue) ── -->
+  <polygon points="20,125 20,20 105,125" fill="#dceefe" stroke="#2f6fed" stroke-width="2"/>
+  <polygon points="20,20 105,125 105,20"  fill="#c3d9f8" stroke="#2f6fed" stroke-width="2"/>
+  <polygon points="105,125 105,20 190,125" fill="#dceefe" stroke="#2f6fed" stroke-width="2"/>
+  <polygon points="105,20 190,125 190,20"  fill="#c3d9f8" stroke="#2f6fed" stroke-width="2"/>
+
+  <!-- face labels -->
+  <text x="43" y="93"  fill="#1e4ecf" font-size="14" font-weight="bold" text-anchor="middle">f₁</text>
+  <text x="75" y="57"  fill="#1e4ecf" font-size="14" font-weight="bold" text-anchor="middle">f₂</text>
+  <text x="128" y="93" fill="#1e4ecf" font-size="14" font-weight="bold" text-anchor="middle">f₃</text>
+  <text x="160" y="57" fill="#1e4ecf" font-size="14" font-weight="bold" text-anchor="middle">f₄</text>
+
+  <!-- seed marker -->
+  <circle cx="28" cy="113" r="11" fill="#2f6fed"/>
+  <text x="28" y="117" fill="white" font-size="8" font-weight="bold" text-anchor="middle">seed</text>
+
+  <!-- growth arrow -->
+  <line x1="50" y1="13" x2="170" y2="13" stroke="#2f6fed" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#sa1)"/>
+  <text x="105" y="142" fill="#2f6fed" font-size="12" font-weight="700" text-anchor="middle">Strip 1</text>
+
+  <!-- ── DEAD-END → a* ── -->
+  <line x1="195" y1="72" x2="224" y2="72" stroke="#D97706" stroke-width="1.5" marker-end="url(#sa3)"/>
+  <rect x="228" y="53" width="74" height="38" rx="8" fill="#FFF7ED" stroke="#D97706" stroke-width="2"/>
+  <text x="265" y="70"  fill="#D97706" font-size="12" font-weight="bold" text-anchor="middle">C₁ʹ (a*)</text>
+  <text x="265" y="84"  fill="#D97706" font-size="10" text-anchor="middle">prefix reset</text>
+  <text x="265" y="43"  fill="#9ca3af" font-size="10" text-anchor="middle">dead-end →</text>
+  <line x1="304" y1="72" x2="330" y2="72" stroke="#D97706" stroke-width="1.5" marker-end="url(#sa3)"/>
+
+  <!-- ── STRIP 2 (teal) ── -->
+  <polygon points="335,125 335,20 420,125" fill="#ddf6f1" stroke="#138a72" stroke-width="2"/>
+  <polygon points="335,20 420,125 420,20"  fill="#bde8e0" stroke="#138a72" stroke-width="2"/>
+  <polygon points="420,125 420,20 505,125" fill="#ddf6f1" stroke="#138a72" stroke-width="2"/>
+  <polygon points="420,20 505,125 505,20"  fill="#bde8e0" stroke="#138a72" stroke-width="2"/>
+
+  <text x="358" y="93"  fill="#0e6b58" font-size="14" font-weight="bold" text-anchor="middle">f₅</text>
+  <text x="390" y="57"  fill="#0e6b58" font-size="14" font-weight="bold" text-anchor="middle">f₆</text>
+  <text x="443" y="93"  fill="#0e6b58" font-size="14" font-weight="bold" text-anchor="middle">f₇</text>
+  <text x="475" y="57"  fill="#0e6b58" font-size="14" font-weight="bold" text-anchor="middle">f₈</text>
+
+  <circle cx="343" cy="113" r="11" fill="#138a72"/>
+  <text x="343" y="117" fill="white" font-size="8" font-weight="bold" text-anchor="middle">seed</text>
+
+  <line x1="365" y1="13" x2="485" y2="13" stroke="#138a72" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#sa2)"/>
+  <text x="420" y="142" fill="#138a72" font-size="12" font-weight="700" text-anchor="middle">Strip 2</text>
+
+  <!-- ── DIVIDER ── -->
+  <line x1="10" y1="158" x2="730" y2="158" stroke="#e5e7eb" stroke-width="1.2"/>
+  <text x="10" y="176" fill="#9ca3af" font-size="11" font-weight="700" letter-spacing="0.08em">TOKEN SEQUENCE</text>
+
+  <!-- ── Token chips ── -->
+  <!-- helper: chip(x,y,label,color) = rect 28×20 rx4 -->
+
+  <!-- v1 (seed, 3 tokens) -->
+  <text x="10" y="196" fill="#6b7280" font-size="10" font-weight="700">v₁</text>
+  <text x="10" y="207" fill="#9ca3af" font-size="9">(seed)</text>
+  <rect x="38" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="51" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₁</text>
+  <rect x="68" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="81" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₂</text>
+  <rect x="98" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="111" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₃</text>
+
+  <line x1="130" y1="187" x2="130" y2="203" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- v2 (2 tokens: c1 shared) -->
+  <text x="136" y="196" fill="#6b7280" font-size="10" font-weight="700">v₂</text>
+  <text x="133" y="207" fill="#9ca3af" font-size="9">(c₁↑)</text>
+  <rect x="166" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="179" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₂</text>
+  <rect x="196" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="209" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₃</text>
+
+  <line x1="228" y1="187" x2="228" y2="203" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- v3 (1 token: c1,c2 shared) -->
+  <text x="234" y="196" fill="#6b7280" font-size="10" font-weight="700">v₃</text>
+  <text x="228" y="207" fill="#9ca3af" font-size="9">(c₁↑c₂↑)</text>
+  <rect x="268" y="185" width="27" height="19" rx="3" fill="white" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="281" y="198" fill="#2f6fed" font-size="10" font-weight="bold" text-anchor="middle">c₃</text>
+
+  <text x="300" y="197" fill="#9ca3af" font-size="13">…</text>
+
+  <!-- a* chip -->
+  <rect x="322" y="182" width="50" height="25" rx="6" fill="#FFF7ED" stroke="#D97706" stroke-width="2"/>
+  <text x="347" y="198" fill="#D97706" font-size="13" font-weight="bold" text-anchor="middle">a*</text>
+  <text x="347" y="215" fill="#D97706" font-size="9" text-anchor="middle">↑ reset</text>
+
+  <line x1="377" y1="187" x2="377" y2="203" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- v5 (reset → seed, 3 tokens) -->
+  <text x="383" y="196" fill="#6b7280" font-size="10" font-weight="700">v₅</text>
+  <text x="380" y="207" fill="#9ca3af" font-size="9">(seed)</text>
+  <rect x="413" y="185" width="27" height="19" rx="3" fill="white" stroke="#138a72" stroke-width="1.5"/>
+  <text x="426" y="198" fill="#138a72" font-size="10" font-weight="bold" text-anchor="middle">c₁</text>
+  <rect x="443" y="185" width="27" height="19" rx="3" fill="white" stroke="#138a72" stroke-width="1.5"/>
+  <text x="456" y="198" fill="#138a72" font-size="10" font-weight="bold" text-anchor="middle">c₂</text>
+  <rect x="473" y="185" width="27" height="19" rx="3" fill="white" stroke="#138a72" stroke-width="1.5"/>
+  <text x="486" y="198" fill="#138a72" font-size="10" font-weight="bold" text-anchor="middle">c₃</text>
+
+  <line x1="506" y1="187" x2="506" y2="203" stroke="#e5e7eb" stroke-width="1"/>
+
+  <!-- v6 (2 tokens) -->
+  <text x="512" y="196" fill="#6b7280" font-size="10" font-weight="700">v₆</text>
+  <text x="509" y="207" fill="#9ca3af" font-size="9">(c₁↑)</text>
+  <rect x="542" y="185" width="27" height="19" rx="3" fill="white" stroke="#138a72" stroke-width="1.5"/>
+  <text x="555" y="198" fill="#138a72" font-size="10" font-weight="bold" text-anchor="middle">c₂</text>
+  <rect x="572" y="185" width="27" height="19" rx="3" fill="white" stroke="#138a72" stroke-width="1.5"/>
+  <text x="585" y="198" fill="#138a72" font-size="10" font-weight="bold" text-anchor="middle">c₃</text>
+
+  <text x="605" y="197" fill="#9ca3af" font-size="13">…</text>
+
+  <!-- brackets -->
+  <line x1="38" y1="228" x2="300" y2="228" stroke="#2f6fed" stroke-width="1.5"/>
+  <text x="169" y="240" fill="#2f6fed" font-size="10" text-anchor="middle" font-style="italic">Strip 1 tokens</text>
+  <line x1="413" y1="228" x2="600" y2="228" stroke="#138a72" stroke-width="1.5"/>
+  <text x="506" y="240" fill="#138a72" font-size="10" text-anchor="middle" font-style="italic">Strip 2 tokens</text>
+
+  <!-- note -->
+  <text x="10" y="262" fill="#9ca3af" font-size="10">↑ = prefix 공유(생략)    •    a* 이후 항상 full (c₁ c₂ c₃) — prefix context 초기화</text>
+</svg>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.2.1 · Algorithm 1</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Edge-to-face adjacency map 먼저 구축, <code>visited[f]=false</code></li>
+      <li>Seed는 <strong>lowest-coordinate-first</strong> — spatially coherent pattern 유지</li>
+      <li>δ=1이면 1 vertex 추가 (triangle), δ=2이면 2 vertex 추가 (quad)</li>
+      <li>Dead-end (boundary 또는 visited만 남음) 도달 시 strip 종료, C₁ʹ 토큰 emit</li>
+      <li>Greedy decomposition이 최적은 아니지만, <strong>"일관된 traversal"이 학습 가능성에 더 중요</strong>하다는 게 SATO의 철학</li>
+    </ul>
+  </aside>
+</section>
+
+
+<!-- Slide 12 — Native UV segmentation -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 12 / 24</div>
+    <h2 class="slide-title">Native UV segmentation via C₁ʺ</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Native UV seg</strong> <span class="colon">:</span> <em>같은 시퀀스 안에서</em> UV island partition</p>
+    <ul class="narration-sub">
+      <li>C₁ʺ 토큰이 island 경계 표시</li>
+    </ul>
+    <div class="layout-split">
+      <div class="figure-panel">
+        <img src="raw/sato/figures/10_7ed8e4ba_img_in_image_box_106_533_589_782.jpg" alt="Artist meshes with UV chart partitions" />
+        <div class="figure-caption">Fig. 5 · UV part 단위 traversal — SATO가 학습하는 partition 구조</div>
+      </div>
+      <div>
+        <div class="aside-note warn">
+          <strong>주의</strong> &nbsp;SATO가 내는 UV 정보는 <strong>face → island ID partition</strong>뿐. <strong>per-vertex (u, v) 좌표는 출력하지 않습니다.</strong> 평면화는 Blender angle-based unwrap 등 표준 parameterizer를 별도로 실행해야 하고, 논문의 distortion 수치는 "같은 parameterizer 기준 SATO chart가 더 나은 unwrap을 낸다"는 의미.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.2.3 · Fig. 5</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Mesh face를 UV island로 disjoint partition</li>
+      <li>Island traversal 순서는 <strong>bottom-to-top deterministic</strong></li>
+      <li>Island 내부는 strip extraction 그대로, 단 다음 seed는 <strong>현재 island 안에서만</strong></li>
+      <li>C₁ʺ 토큰은 C₁ʹ 기능 <strong>포함</strong> — strip 종료 + UV 전환 동시 표시</li>
+      <li>AR mesh 생성 framework에서 UV 분할까지 한 번에 내는 건 <strong>이게 최초</strong></li>
+      <li>(u, v) 자체가 안 나온다는 점은 Q&A에서도 자주 나오는 포인트 — 명확히 짚고 넘어가자</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 13 — Unified tri/quad -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 13 / 24</div>
+    <h2 class="slide-title">Unified tri/quad via stride σ</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Unified tri/quad</strong> <span class="colon">:</span> 같은 토큰 시퀀스, σ 스위치만</p>
+    <ul class="narration-sub">
+      <li>σ=1 → triangle · σ=2 → quad, <em>재학습 불필요</em></li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/11_7ed8e4ba_img_in_image_box_635_158_1119_341.jpg" alt="Unified tri/quad strip" />
+      <div class="figure-caption">Fig. 6 · (a) tri strip은 turn 가능 (b) quad strip은 직진 (c) quad 토큰을 tri로도 디코딩 가능</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.2.1 · §4.3 · Fig. 6</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>σ=1: 각 새 vertex가 fᵢ = (vᵢ, vᵢ₊₁, vᵢ₊₂) 완성</li>
+      <li>σ=2: vertex pair로 qᵢ = (v₂ᵢ, v₂ᵢ₊₁, v₂ᵢ₊₃, v₂ᵢ₊₂) 완성</li>
+      <li>Winding 일관성 위해 face 생성 시 <strong>마지막 두 vertex swap</strong> → tri/quad 시퀀스 identical</li>
+      <li>Quad strip은 edge flip turn이 거의 없어 <strong>prior가 깨끗</strong> → tri 품질까지 끌어올림</li>
+      <li>고품질 quad mesh <strong>120개</strong>만으로 fine-tune 가능 (tri prior가 이미 strong하니까)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 14 — Strips vs patch ordering -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 14 / 24</div>
+    <h2 class="slide-title">Strips vs patch ordering</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Strip vs patch</strong> <span class="colon">:</span> patch는 <em>5–7 face마다 리셋</em>, strip은 임의 길이</p>
+    <ul class="narration-sub">
+      <li>vocab · compression 모두 개선</li>
+    </ul>
+    <div class="layout-split">
+      <div class="figure-panel">
+        <img src="raw/sato/figures/12_9ddce566_img_in_image_box_102_159_380_265.jpg" alt="BPT/DeepMesh fan ordering" />
+        <img src="raw/sato/figures/13_9ddce566_img_in_image_box_394_164_588_236.jpg" alt="SATO strip ordering" style="margin-top: 10px;" />
+        <div class="figure-caption">Fig. 7 · patch(위) vs strip(아래) ordering</div>
+      </div>
+      <div>
+        <div class="stat-grid" style="grid-template-columns: 1fr 1fr;">
+          <div class="stat">
+            <div class="label">BPT Vocab</div>
+            <div class="value mono-num">40,960</div>
+          </div>
+          <div class="stat">
+            <div class="label">DeepMesh Vocab</div>
+            <div class="value mono-num">4,736</div>
+          </div>
+          <div class="stat accent">
+            <div class="label">SATO Vocab</div>
+            <div class="value mono-num">4,800</div>
+          </div>
+          <div class="stat accent">
+            <div class="label">SATO Comp.</div>
+            <div class="value mono-num">0.283</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.2.4 · Table 1 · Fig. 7</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>BPT·DeepMesh는 vertex 주변 fan(5–7 face)마다 patch transition 필요</li>
+      <li>Patch 경계마다 prefix sharing 리셋 → 압축 효율 떨어짐</li>
+      <li>SATO strip은 제한 없이 길게 연결 → <strong>spatial continuity 길게 유지</strong></li>
+      <li>Vocab 비교: BPT 40,960 / DeepMesh 4,736 / <strong>SATO 4,800</strong> (UV 토큰 포함하고도 비슷한 크기)</li>
+      <li>Comp rate: BPT 0.228 / DeepMesh 0.330 / <strong>SATO 0.283</strong> — 의미 있는 단위 보존하면서 중간 압축률</li>
+      <li>핵심은 <strong>숫자 자체가 아니라 inductive bias</strong> — 긴 edge-flow를 단일 chain으로 학습</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 15 — Training setup -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Method · Slide 15 / 24</div>
+    <h2 class="slide-title">Training setup — 3 stages</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Training</strong> <span class="colon">:</span> tri pretrain → UV post-train → quad fine-tune</p>
+    <ul class="narration-sub">
+      <li><em>prior를 단계적으로 적층</em></li>
+    </ul>
+    <div class="train-timeline">
+      <div class="stage">
+        <div class="dot"></div>
+        <span class="stage-tag">Stage I</span>
+        <h3>Triangle Pretrain</h3>
+        <div class="stage-spec">1.47M tri mesh · 64 × A800<br/>200K steps · ~7 days<br/>LR 10⁻⁴ → 10⁻⁵ cosine</div>
+      </div>
+      <div class="stage">
+        <div class="dot"></div>
+        <span class="stage-tag">Stage II</span>
+        <h3>UV Post-train</h3>
+        <div class="stage-spec">1.11M UV-annotated mesh<br/>256 × A800 · 80K steps · ~3 days<br/>C₁ʺ 토큰만 집중 학습</div>
+      </div>
+      <div class="stage">
+        <div class="dot"></div>
+        <span class="stage-tag">Stage III</span>
+        <h3>Quad Fine-tune</h3>
+        <div class="stage-spec">120 quad mesh<br/>64 × A800 · 25K steps · ~1 day<br/>LR 10⁻⁵ 고정 · σ=2 decoding</div>
+      </div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.4 · §5 Implementation Details</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Stage I에서 <strong>geometric prior + PC↔mesh alignment</strong> 확보</li>
+      <li>Stage II는 scratch에서 UV 같이 학습하면 수렴 느림 → <strong>pretrained에서 시작</strong>이 핵심</li>
+      <li>Stage III는 quad 데이터가 희귀하니 fine-tune만 — tri prior 재활용</li>
+      <li><strong>Bidirectional transfer</strong>: tri prior → quad 안정성, quad fine-tune → tri regularity</li>
+      <li>Training window <strong>9K tokens</strong> — long-sequence mesh도 sliding으로 커버</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 16 — Triangle quantitative -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Results · Slide 16 / 24</div>
+    <h2 class="slide-title">Triangle generation — quantitative</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Triangle quant</strong> <span class="colon">:</span> 3 데이터셋 · 4 지표 모두 SOTA</p>
+    <ul class="narration-sub">
+      <li><em>Objaverse F1 : DeepMesh의 2배 이상</em></li>
+    </ul>
+    <div class="comp-table-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th class="num">ShapeNet F1↑</th>
+            <th class="num">Thingi10K F1↑</th>
+            <th class="num">Objaverse F1↑</th>
+            <th class="num">Objaverse NC↑</th>
+            <th class="num">Objaverse CD↓</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="method-name">MeshAnythingV2</td><td class="num mono-num">0.361</td><td class="num mono-num">0.162</td><td class="num mono-num">0.208</td><td class="num mono-num">0.858</td><td class="num mono-num">0.016</td></tr>
+          <tr><td class="method-name">TreeMeshGPT</td><td class="num mono-num">0.439</td><td class="num mono-num">0.236</td><td class="num mono-num">0.188</td><td class="num mono-num">0.783</td><td class="num mono-num">0.057</td></tr>
+          <tr><td class="method-name">BPT</td><td class="num mono-num">0.605</td><td class="num mono-num">0.248</td><td class="num mono-num">0.265</td><td class="num mono-num">0.841</td><td class="num mono-num">0.030</td></tr>
+          <tr><td class="method-name">DeepMesh</td><td class="num mono-num">0.532</td><td class="num mono-num">0.157</td><td class="num mono-num">0.240</td><td class="num mono-num">0.859</td><td class="num mono-num">0.020</td></tr>
+          <tr class="row-ours"><td class="method-name">SATO (Ours)</td><td class="num mono-num">0.807</td><td class="num mono-num">0.460</td><td class="num mono-num">0.503</td><td class="num mono-num">0.909</td><td class="num mono-num">0.009</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper Table 2 · ShapeNet 50 + Thingi10K 100 + Objaverse 100 shapes</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>F1은 precision·recall 조화평균 — <strong>surface coverage + completeness</strong> 반영</li>
+      <li>F1 향상이 제일 인상적 (Objaverse 2배+) — strip token이 local topology에 강함</li>
+      <li>NC·CD도 동시 개선 → 표면 방향성·point fidelity 모두 향상</li>
+      <li>Thingi10K(기계 parts)·Objaverse(artist asset) 양쪽에서 robust — 도메인 의존 아님</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 17 — Triangle qualitative -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Results · Slide 17 / 24</div>
+    <h2 class="slide-title">Triangle generation — qualitative</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Triangle qual</strong> <span class="colon">:</span> clean surface · complete structure · <em>artist-aligned edge flow</em></p>
+    <ul class="narration-sub">
+      <li>baseline 대비 hole · noise · asymmetry 적음</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/15_af531c46_img_in_image_box_625_160_1105_860.jpg" alt="Qualitative comparison" />
+      <div class="figure-caption">Fig. 9 · Baselines 대비 qualitative comparison</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper Fig. 9</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Hole · noise · asymmetry가 적음 (특히 TreeMeshGPT와 비교하면 명확)</li>
+      <li>Edge flow가 curvature 방향·sharp feature를 따라감</li>
+      <li>이 품질이 downstream rigging·texturing 편의성으로 직결</li>
+      <li>Q&A 대비: "수치가 좋은 게 실물에 보이는가?" → Yes, 시각적으로도 확인됨</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 18 — User study -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Results · Slide 18 / 24</div>
+    <h2 class="slide-title">User study — 25 industry professionals</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>User study</strong> <span class="colon">:</span> artist가 실제로 선호</p>
+    <ul class="narration-sub">
+      <li><em>SATO 2.61 / BPT 1.40</em> — 2위 대비 ~2배</li>
+    </ul>
+    <div class="comp-table-wrap">
+      <table class="comp-table">
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th class="num">Score (0–3)</th>
+            <th class="num">Variance</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="method-name">MeshAnythingV2</td><td class="num mono-num">0.18</td><td class="num mono-num">0.27</td></tr>
+          <tr><td class="method-name">TreeMeshGPT</td><td class="num mono-num">0.57</td><td class="num mono-num">0.67</td></tr>
+          <tr><td class="method-name">DeepMesh</td><td class="num mono-num">1.17</td><td class="num mono-num">0.93</td></tr>
+          <tr><td class="method-name">BPT</td><td class="num mono-num">1.40</td><td class="num mono-num">0.95</td></tr>
+          <tr class="row-ours"><td class="method-name">SATO (Ours)</td><td class="num mono-num">2.61</td><td class="num mono-num">0.49</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper Table 3 · §5.1</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>25명 3D 산업 전문가 × 30 shape group (tri 10 + quad 10 + UV 10)</li>
+      <li>기준: regularity · artist-likeness · geometric fidelity · shape consistency</li>
+      <li>Ranking: 1st=3, 2nd=2, 3rd=1, else=0 → 평균</li>
+      <li>Variance도 가장 낮음 (0.49) → <strong>평가자 간 합의 강함</strong></li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 19 — UV segmentation -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Results · Slide 19 / 24</div>
+    <h2 class="slide-title">UV segmentation — vs PartUV</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>UV seg</strong> <span class="colon">:</span> 같은 Blender unwrap에서도 <em>distortion 전 지표 개선</em></p>
+    <ul class="narration-sub">
+      <li>SATO mesh 쓰면 PartUV 결과가 GT mesh보다 좋아짐 (downstream utility)</li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/16_d2015b69_img_in_image_box_107_155_1117_621.jpg" alt="PartUV comparison" />
+      <div class="figure-caption">Fig. 10 · (a) ours mesh (b) ours UV seg (c) ours UV unwrap (d) PartUV w/ ours mesh (e) PartUV w/ GT mesh</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §5.2 · Fig. 10 · Tables 4, 5</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Distortion (Table 5): L2 Stretch 0.979, Area 0.562, Angle 1.128, SymDir 5.156 — 전부 PartField보다 낮음</li>
+      <li>User study (Table 4): <strong>Ours 2.60 &gt; PartUV+ours mesh 2.04 &gt; PartUV+GT mesh 1.36</strong></li>
+      <li>⭐ SATO mesh 쓰면 <strong>PartUV 결과가 GT mesh보다 좋아짐</strong> → 우리 mesh의 downstream utility 증명</li>
+      <li>Joint generation → inter-part seam·symmetry artifact 없음 (MeshMosaic와 대조)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 20 — Quad generation -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Results · Slide 20 / 24</div>
+    <h2 class="slide-title">Quad generation</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Quad</strong> <span class="colon">:</span> σ=2 decoding만으로 quad, 별도 모델 없음</p>
+    <ul class="narration-sub">
+      <li>전통 remesh 대비 <em>면 수·밀도 자유 설정</em></li>
+    </ul>
+    <div class="figure-panel">
+      <img src="raw/sato/figures/21_02e6b165_img_in_image_box_100_148_1118_750.jpg" alt="Quad comparison" />
+      <div class="figure-caption">Fig. 15 · BPT·DeepMesh 대비 quad 생성 품질</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §5.3 · Figs. 15, 16</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>Quad detokenizer는 인접 tri pair를 merge — geometric fidelity는 tri 출력과 거의 동일</li>
+      <li>BPT·DeepMesh보다 stable, artist-aligned layout</li>
+      <li>전통 remesh(QuadriFlow·QuadWild·NeurCross·CrossGen)는 cross-field 등 explicit guiding signal 의존</li>
+      <li>SATO는 end-to-end, strip 토큰만으로 quad 품질·밀도 조절</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 21 — Resolution & limitations -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Discussion · Slide 21 / 24</div>
+    <h2 class="slide-title">Resolution envelope &amp; limitations</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>Resolution</strong> <span class="colon">:</span> sweet spot <em>~수천 face</em></p>
+    <ul class="narration-sub">
+      <li>dense sim mesh · thin-shell · material · (u,v) 좌표는 out of scope</li>
+    </ul>
+    <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <div class="stat">
+        <div class="label">Training face 범위</div>
+        <div class="value mono-num">500 – 16K</div>
+      </div>
+      <div class="stat">
+        <div class="label">Training context</div>
+        <div class="value mono-num">9K tok</div>
+      </div>
+      <div class="stat">
+        <div class="label">Inference 관측 max</div>
+        <div class="value mono-num">~20K tok</div>
+      </div>
+      <div class="stat accent">
+        <div class="label">실용 Sweet Spot</div>
+        <div class="value mono-num">~1K – 5K face</div>
+      </div>
+      <div class="stat">
+        <div class="label">Garment sim mesh</div>
+        <div class="value mono-num">30K – 100K face</div>
+      </div>
+      <div class="stat">
+        <div class="label">학습 분포 대비</div>
+        <div class="value mono-num">1.5 – 6×</div>
+      </div>
+    </div>
+    <div class="aside-note"><strong>Out of scope</strong> &nbsp;(1) high-poly 직접 생성 · (2) thin-shell / non-manifold garment · (3) material / PBR · (4) (u, v) 좌표 생성 · (5) quad 데이터 비대칭(120개)</div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §4.4.2 · §6 · SATO_review.md</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>AR sequence length ∝ face 수 → <strong>high-poly 직접 생성 불가</strong></li>
+      <li>Garment CLO sim mesh는 학습 분포의 <strong>1.5–6배</strong></li>
+      <li>현실적 활용: (a) base/retopology shell (b) 다른 dense generator의 retopology 후처리</li>
+      <li>Quad 데이터 <strong>120개</strong>뿐 — 도메인별 추가 수집 여지 (CLO .zprj 가능성)</li>
+      <li>(u,v) 좌표 자체는 생성 안 함 — Blender 등 parameterizer 여전히 필요</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 22 — Relevance 1: UV island ↔ panel -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Our take · Slide 22 / 24</div>
+    <h2 class="slide-title">UV island ↔ Garment panel</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>UV island ↔ Garment panel</strong> <span class="colon">:</span> SATO의 face→island partition</p>
+    <ul class="narration-sub">
+      <li>수학적으로 <em>sewing-pattern panel 집합과 동형</em></li>
+    </ul>
+    <div class="concept-map">
+      <div class="concept-card">
+        <span class="label">SATO</span>
+        <h3>UV island partition</h3>
+        <p>3D mesh surface를 semantic patch로 cut-and-unwrap한 face partition 집합.</p>
+      </div>
+      <div class="concept-arrow">
+        ≅
+        <span class="label">structurally isomorphic</span>
+      </div>
+      <div class="concept-card">
+        <span class="label">Garment Design</span>
+        <h3>Sewing pattern panels</h3>
+        <p>3D garment surface를 봉제 단위로 cut-and-flatten한 2D panel 집합 (CLO .zprj).</p>
+      </div>
+    </div>
+    <div class="placeholder" style="min-height: 120px; margin-top: 8px;">
+      <span class="ph-tag">Placeholder (optional)</span>
+      <div class="ph-title">SATO UV 분할 결과 ↔ CLO 의상 panel layout 나란히 보여주는 매핑 이미지</div>
+      <div class="ph-desc">왼쪽에 논문 Fig. 11 중 하나의 UV segmentation 렌더, 오른쪽에 비슷한 형태의 CLO garment panel 배치 스크린샷을 붙여 1:1 대응이 보이게 편집.</div>
+      <div class="ph-why">개념 동형을 말로만 하면 추상적 — 시각 대응이 있으면 팀원이 즉시 "이 논문은 우리 일이다"로 받아들임.</div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · SATO_review.md §프로젝트 관련성 ①</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>UV island = "3D 표면 → 2D로 cut-and-unwrap한 patch 집합"</li>
+      <li>Sewing pattern panel = 동일한 cut-and-flatten의 production analogue</li>
+      <li>SATO의 "geometry + island segmentation joint generation"은 <strong>"3D garment + sewing pattern joint generation"의 직접 prior</strong></li>
+      <li>PatternGPT(pattern-only)와 상호 보완 — SATO는 geometry+partition, PatternGPT는 pattern 언어</li>
+      <li>다음 단계: <strong>두 접근 블렌드</strong> (strip token × pattern token 혼합 vocab)</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 23 — Relevance 2: Comparison matrix -->
+<section class="slide">
+  <div class="slide-header">
+    <div class="kicker">Our take · Slide 23 / 24</div>
+    <h2 class="slide-title">Where SATO sits in our matrix</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <p class="narration"><strong>SATO의 위치</strong> <span class="colon">:</span> <em>discrete token AR</em> 축 대표</p>
+    <ul class="narration-sub">
+      <li>image · TSDF 계열과 다른 representation 축 추가</li>
+    </ul>
+    <div class="comp-table-wrap">
+      <table class="comp-table" style="font-size: 14px;">
+        <thead>
+          <tr>
+            <th>특성</th>
+            <th>SATO</th>
+            <th>Omages</th>
+            <th>DiffGI</th>
+            <th>GIMDiffusion</th>
+            <th>PatternGPT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="row-ours">
+            <td>Representation</td>
+            <td><strong>Strip token seq</strong></td>
+            <td>12-ch 64×64 image</td>
+            <td>32×32×4 TSDF+Pos</td>
+            <td>Multi-chart GIM</td>
+            <td>Sewing pattern token</td>
+          </tr>
+          <tr class="row-ours">
+            <td>Modeling</td>
+            <td><strong>AR Transformer</strong></td>
+            <td>DiT</td>
+            <td>Latent Diffusion</td>
+            <td>Collaborative Ctrl</td>
+            <td>Causal Transformer</td>
+          </tr>
+          <tr class="row-ours">
+            <td>UV 처리</td>
+            <td><strong>Sequence-native partition</strong></td>
+            <td>UV atlas 직접</td>
+            <td>UV chart 암시</td>
+            <td>UV chart 암시</td>
+            <td>N/A</td>
+          </tr>
+          <tr class="row-ours">
+            <td>Tri/Quad</td>
+            <td><strong>Unified (σ)</strong></td>
+            <td>Tri 중심</td>
+            <td>Tri (DMS)</td>
+            <td>Tri</td>
+            <td>N/A</td>
+          </tr>
+          <tr class="row-ours">
+            <td>Garment 특화</td>
+            <td>X</td>
+            <td>X</td>
+            <td>△ (thin-shell)</td>
+            <td>X</td>
+            <td><strong>O (pattern)</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · SATO_review.md §다른 접근과의 비교 · §프로젝트 관련성 ②③</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li>SATO 조합 = <strong>(token AR) × (causal transformer) × (sequence-native UV partition) × (σ unified tri/quad)</strong></li>
+      <li>Image 계열(Omages, GIMDiffusion)은 pixel grid 기반 — discrete AR 축과 상보적</li>
+      <li>PatternGPT는 garment 특화지만 pattern만, geometry는 없음</li>
+      <li>Tokenization 설계 아이디어 차용: hierarchical prefix sharing, strip transition을 panel-간 연결에 적용 가능</li>
+      <li>다음 탐색: <strong>image 표현 × AR token 하이브리드</strong> — CLO workflow에서 어디까지 통하는지</li>
+    </ul>
+  </aside>
+</section>
+
+<!-- Slide 24 — Takeaways -->
+<section class="slide slide--takeaway">
+  <div class="slide-header">
+    <div class="kicker">Conclusion · Slide 24 / 24</div>
+    <h2 class="slide-title">Takeaways</h2>
+    <span class="title-accent"></span>
+  </div>
+  <div class="slide-body">
+    <div class="two-col">
+      <div>
+        <p class="big-takeaway">Strip token이 artist mesh AR 생성에 비어있던 <em>mid-level 언어</em>를 채웠다 — 그리고 그 언어는 <em>garment</em>에도 말할 수 있다.</p>
+      </div>
+      <div class="hero-wrap">
+        <img src="raw/sato/figures/01_ed3e4ace_img_in_image_box_102_534_1120_1037.jpg" alt="SATO teaser" />
+      </div>
+    </div>
+  </div>
+  <div class="ref-note"><strong>Reference</strong> · Paper §7 · Fig. 1 teaser</div>
+  <aside class="speaker-notes">
+    <div class="notes-label">Speaker Notes</div>
+    <ul>
+      <li><strong>Strip</strong> = coordinate와 patch 사이의 mid-level primitive, artist 관습과 정렬</li>
+      <li><strong>Stride σ</strong> 스위치 하나로 tri/quad 통합 — 데이터 prior 양방향 전이</li>
+      <li><strong>UV partition native 생성</strong> — AR framework 최초</li>
+      <li><strong>본 프로젝트 연결</strong>: UV island ↔ sewing pattern panel, tokenization 설계 축 확장</li>
+      <li><strong>남은 과제</strong>: high-poly · thin-shell garment · material/PBR · (u,v) 좌표 자체 생성</li>
+      <li>질문 받기 전 마지막 멘트: "이 논문이 바로 우리 작업은 아니지만, 우리가 풀려는 문제의 <strong>정확히 옆집</strong>"</li>
+    </ul>
+  </aside>
+</section>
+
+</div><!-- /.deck -->
+
+<!-- Navigation bar -->
+<div class="nav-bar">
+  <span class="nav-hint">← / → · Space · Home / End · F · N (speaker notes) · Esc</span>
+  <div class="nav-right">
+    <span class="counter" id="counter">1 / 24</span>
+    <button class="nav-btn" id="notes-btn">Notes</button>
+    <button class="nav-btn" id="prev-btn">Prev</button>
+    <button class="nav-btn" id="next-btn">Next</button>
+    <button class="nav-btn" id="fullscreen-btn">Fullscreen</button>
+  </div>
+</div>
+
+<!-- Figure zoom modal -->
+<div class="modal" id="modal">
+  <img id="modal-img" src="" alt="" />
+</div>
+
+<script>
+(function () {
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  const total = slides.length;
+  let current = 0;
+
+  const counter = document.getElementById('counter');
+  const progress = document.getElementById('progress');
+  const modal = document.getElementById('modal');
+  const modalImg = document.getElementById('modal-img');
+  const fullscreenBtn = document.getElementById('fullscreen-btn');
+  const notesBtn = document.getElementById('notes-btn');
+  const prevBtn = document.getElementById('prev-btn');
+  const nextBtn = document.getElementById('next-btn');
+
+  function show(i) {
+    current = Math.max(0, Math.min(total - 1, i));
+    slides.forEach((s, idx) => s.classList.toggle('is-active', idx === current));
+    counter.textContent = `${current + 1} / ${total}`;
+    progress.style.width = `${((current + 1) / total) * 100}%`;
+    try {
+      if (history && history.replaceState) {
+        history.replaceState(null, '', `#${current + 1}`);
+      }
+    } catch (_) {}
+  }
+
+  function isModalOpen() { return modal.classList.contains('is-open'); }
+  function openModal(src) {
+    modalImg.src = src;
+    modal.classList.add('is-open');
+  }
+  function closeModal() {
+    modal.classList.remove('is-open');
+    modalImg.src = '';
+  }
+  modal.addEventListener('click', closeModal);
+
+  document.querySelectorAll('.figure-panel img').forEach(img => {
+    img.addEventListener('click', (e) => {
+      e.stopPropagation();
+      openModal(img.src);
+    });
+  });
+
+  function toggleNotes() {
+    document.body.classList.toggle('show-notes');
+    notesBtn.classList.toggle('is-on', document.body.classList.contains('show-notes'));
+  }
+  notesBtn.addEventListener('click', toggleNotes);
+
+  document.addEventListener('keydown', (e) => {
+    if (isModalOpen()) {
+      if (e.key === 'Escape') closeModal();
+      return;
+    }
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'PageDown':
+      case ' ':
+        e.preventDefault(); show(current + 1); break;
+      case 'ArrowLeft':
+      case 'PageUp':
+        e.preventDefault(); show(current - 1); break;
+      case 'Home': e.preventDefault(); show(0); break;
+      case 'End': e.preventDefault(); show(total - 1); break;
+      case 'f': case 'F': e.preventDefault(); toggleFullscreen(); break;
+      case 'n': case 'N': e.preventDefault(); toggleNotes(); break;
+    }
+  });
+
+  prevBtn.addEventListener('click', () => show(current - 1));
+  nextBtn.addEventListener('click', () => show(current + 1));
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen();
+    }
+  }
+  document.addEventListener('fullscreenchange', () => {
+    fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Fullscreen' : 'Fullscreen';
+  });
+  fullscreenBtn.addEventListener('click', toggleFullscreen);
+
+  const initialHash = parseInt(location.hash.replace('#', ''), 10);
+  if (!Number.isNaN(initialHash) && initialHash >= 1 && initialHash <= total) {
+    show(initialHash - 1);
+  } else {
+    show(0);
+  }
+})();
+</script>
+
+</body>
+</html>

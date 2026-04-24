@@ -1,0 +1,11 @@
+[project]
+name = "260424-seminar"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pillow>=12.2.0",
+    "pymupdf>=1.27.2.2",
+    "requests>=2.33.1",
+]
